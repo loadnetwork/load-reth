@@ -197,6 +197,7 @@ where
 mod tests {
     use alloy_consensus::Header as ConsensusHeader;
     use reth_chainspec::EthereumHardforks;
+
     use super::*;
     use crate::chainspec::LoadChainSpec;
 
