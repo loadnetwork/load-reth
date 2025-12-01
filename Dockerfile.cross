@@ -1,0 +1,31 @@
+FROM ubuntu:24.04
+
+LABEL org.opencontainers.image.source="https://github.com/loadnetwork/load-reth"
+LABEL org.opencontainers.image.description="Load-Reth execution client for Load Network"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
+
+# Install runtime dependencies that match the primary Dockerfile.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates libssl3 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user just like the main image for consistency.
+RUN groupadd -r reth && useradd -r -g reth -d /home/reth -m reth
+
+ARG TARGETARCH
+COPY ./dist/bin/${TARGETARCH}/load-reth /usr/local/bin/load-reth
+RUN chmod +x /usr/local/bin/load-reth
+
+# Prepare runtime directories.
+RUN mkdir -p /licenses && mkdir -p /data && chown -R reth:reth /data
+
+USER reth
+ENV RUST_LOG=info
+
+EXPOSE 30303 30303/udp 8545 8546 8551 9001
+VOLUME ["/data"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD grep -q load-reth /proc/1/comm || exit 1
+
+ENTRYPOINT ["/usr/local/bin/load-reth"]

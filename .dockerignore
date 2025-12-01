@@ -1,0 +1,14 @@
+# Build artifacts we can regenerate quickly
+target
+
+# Git metadata (build args provide VERSION/COMMIT)
+.git
+
+# Local tooling / env
+.cargo
+.idea
+.vscode
+
+# Tests/docs artifacts
+coverage
+*.log

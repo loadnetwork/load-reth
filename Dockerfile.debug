@@ -1,0 +1,70 @@
+# Fast debug build Dockerfile for load-reth development
+# Uses same cargo-chef pattern as production but optimized for iteration speed
+# - No cross-compilation (native platform only)
+# - Configurable profile (default: release for reasonable speed)
+# - Debug symbols preserved for profiling
+
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends libclang-dev pkg-config && \
+    rm -rf /var/lib/apt/lists/*
+
+# Builds a cargo-chef plan
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+
+# Use release profile by default for reasonable performance
+# Override with --build-arg BUILD_PROFILE=dev for faster builds
+ARG BUILD_PROFILE=release
+ENV BUILD_PROFILE=$BUILD_PROFILE
+
+# Optional features
+ARG FEATURES=""
+ENV FEATURES=$FEATURES
+
+# Builds dependencies (no cross-compilation for speed)
+RUN cargo chef cook --locked --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json
+
+# Build application
+COPY . .
+RUN cargo build --profile $BUILD_PROFILE --features "$FEATURES" --locked --bin load-reth
+
+# Copy binary from appropriate directory
+RUN cp /app/target/$BUILD_PROFILE/load-reth /app/load-reth
+
+# Use Ubuntu as the release image
+FROM ubuntu:24.04 AS runtime
+
+# Create non-root user
+RUN groupadd -r reth && useradd -r -g reth -d /home/reth -m reth
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates libssl3 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy load-reth over from the build stage
+COPY --from=builder /app/load-reth /usr/local/bin/
+RUN chmod +x /usr/local/bin/load-reth
+
+# Prepare directories for runtime assets
+RUN mkdir -p /licenses && mkdir -p /data && chown -R reth:reth /data
+
+USER reth
+
+# Expose standard Ethereum execution client ports
+EXPOSE 30303 30303/udp 8545 8546 8551 9001
+
+VOLUME ["/data"]
+
+# Set environment to show we're in debug mode
+ENV RUST_LOG=debug
+ENV BUILD_TYPE=$BUILD_PROFILE
+
+ENTRYPOINT ["/usr/local/bin/load-reth"]
