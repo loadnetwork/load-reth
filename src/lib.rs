@@ -50,7 +50,6 @@ pub mod rpc;
 pub mod transaction;
 pub mod version;
 
-// Re-export key types
 pub use chainspec::{LoadChainSpec, LoadChainSpecParser};
 pub use engine::{
     payload::{
