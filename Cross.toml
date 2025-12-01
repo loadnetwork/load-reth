@@ -1,13 +1,21 @@
+[target.x86_64-unknown-linux-gnu.env]
+LIBCLANG_PATH = "/usr/lib/llvm-18/lib"
+
 [target.x86_64-unknown-linux-gnu]
 pre-build = [
-    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang llvm-dev libclang-dev build-essential pkg-config && rm -rf /var/lib/apt/lists/*",
-    "LLVM_LIBDIR=$(llvm-config --libdir) && ln -sf ${LLVM_LIBDIR}/libclang.so /usr/lib/libclang.so",
+    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl lsb-release software-properties-common build-essential pkg-config && rm -rf /var/lib/apt/lists/*",
+    "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
+    "ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.1 && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.3.8 && if [ -d /usr/lib/llvm-3.8/lib ]; then ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/llvm-3.8/lib/libclang.so; fi",
     "ldconfig"
 ]
 
+[target.aarch64-unknown-linux-gnu.env]
+LIBCLANG_PATH = "/usr/lib/llvm-18/lib"
+
 [target.aarch64-unknown-linux-gnu]
 pre-build = [
-    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang llvm-dev libclang-dev build-essential pkg-config && rm -rf /var/lib/apt/lists/*",
-    "LLVM_LIBDIR=$(llvm-config --libdir) && ln -sf ${LLVM_LIBDIR}/libclang.so /usr/lib/libclang.so",
+    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl lsb-release software-properties-common build-essential pkg-config && rm -rf /var/lib/apt/lists/*",
+    "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
+    "ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.1 && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.3.8 && if [ -d /usr/lib/llvm-3.8/lib ]; then ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/llvm-3.8/lib/libclang.so; fi",
     "ldconfig"
 ]
