@@ -1,0 +1,9 @@
+[target.x86_64-unknown-linux-gnu]
+pre-build = [
+    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang libclang-dev build-essential && rm -rf /var/lib/apt/lists/*"
+]
+
+[target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang libclang-dev build-essential && rm -rf /var/lib/apt/lists/*"
+]
