@@ -3,7 +3,7 @@
 Execution client for the Load Network, built on the reth SDK. Load-reth implements
 an Ethereum-compatible execution layer with enhanced data availability support
 (up to 1024 blobs per block) and communicates with Ultramarine (consensus layer)
-via Engine API v3.
+via Engine API v3/v4 (Prague).
 
 ## Status: Phase P2 / M5 Complete ✅
 
@@ -15,12 +15,15 @@ via Engine API v3.
 - ✅ **Payload Builder & Engine Guards**: Load payload builder enforcing PREVRANDAO + blob caps, Engine API validators wired with Load types
 - ✅ **Integration Harness (M5)**: FCU→getPayload round-trips (including optional 1024-blob stress), Prague gating (pre/post activation), blob ingress caps, and `engine_getBlobsV1` retrieval/request-weight coverage
 - ✅ **Engine RPC Guardrails**: `engine_getBlobsV2` is explicitly gated to `UnsupportedFork` before Osaka and remains inert afterward until we store EIP-7594 sidecars; blob retrieval tests also cover multi-blob V1 responses plus empty/missing hash cases and the request-size limit
-- 🛠️ **Next**: Observability & branding (Load-specific metrics/client string), eventual EIP-7594 support when required
+- ✅ **Observability**: Load-prefixed Prometheus metrics (`load_reth_engine_*`, `load_reth_blob_cache_*`) with Grafana dashboard integration
+- ✅ **Prague (V4)**: Full Engine API V4 support (`newPayloadV4`, `getPayloadV4`) with empty execution requests (Load does not deploy EIP-6110/7002/7251 system contracts)
+- 🛠️ **Next**: EIP-7594 support when required
 
 ## Key Features
 
 | Feature | Ethereum | Load Network |
 |---------|----------|--------------|
+| Gas limit | 30M | **2 billion** |
 | Max blobs/block | 6 | **1024** |
 | Target blobs/block | 3 | **512** |
 | Blob cache size | ~384 blobs | **~32,768 blobs** |
@@ -41,13 +44,16 @@ Ultramarine (Consensus) ←─────────→ load-reth (Execution)
 
 - `PayloadAttributes.prev_randao` **must be** `0x01` for all Engine API calls
 - Cancun active at genesis (timestamp 0) for blob support
-- Prague scheduled via genesis config for proposer metadata
+- Prague active at genesis (timestamp 0) for V4 Engine API
 - Terminal total difficulty = 0 (PoS mode from genesis)
+- Gas limit = 2 billion (`0x77359400`)
 - `engine_getBlobsV1` is supported today; `engine_getBlobsV2` is intentionally
   gated (`UnsupportedFork`) until Load stores Osaka sidecars.
 - `web3_clientVersion` and Engine `engine_exchangeCapabilities` report the
   Load-specific identifier (`load-reth/v{version}-{sha}`) so CL tooling can
   distinguish EL builds.
+- Prague execution requests: Load does not deploy EIP-6110/7002/7251 system
+  contracts, so execution always produces `EMPTY_REQUESTS_HASH`.
 
 ## Installation
 
@@ -163,7 +169,10 @@ standard reth `/metrics` endpoint:
   `load_reth_blob_cache_bytes`
 
 These complement the default reth metrics so Ultramarine can correlate CL/EL
-events (e.g. blob cache depth vs. consensus height).
+events (e.g. blob cache depth vs. consensus height). The bundled Grafana
+dashboard now includes a **Load Engine** row that plots the p95 latency for
+newPayload/getPayload/forkchoice, engine_getBlobs hit/miss rates, and the
+current blob-cache occupancy.
 
 ## Security
 
@@ -210,7 +219,7 @@ Create a custom genesis JSON following the format:
     "terminalTotalDifficulty": 0,
     "terminalTotalDifficultyPassed": true
   },
-  "gasLimit": "0x1c9c380",
+  "gasLimit": "0x77359400",
   "baseFeePerGas": "0x7",
   ...
 }

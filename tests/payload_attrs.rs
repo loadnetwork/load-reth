@@ -22,7 +22,7 @@ use reth_e2e_test_utils::node::NodeTestContext;
 use reth_ethereum_engine_primitives::BlobSidecars;
 use reth_node_builder::NodeBuilder;
 use reth_node_core::{args::RpcServerArgs, node_config::NodeConfig};
-use reth_payload_primitives::{BuiltPayload, PayloadBuilderAttributes};
+use reth_payload_primitives::PayloadBuilderAttributes;
 use reth_tasks::TaskManager;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -138,18 +138,12 @@ async fn prague_requests_accepted_after_activation() -> Result<()> {
     let envelope: ExecutionPayloadEnvelopeV3 =
         payload.clone().try_into().expect("payload should convert to V3");
 
-    let mut requests = Requests::with_capacity(1);
-    // TODO(load): switch to non-empty requests once block hash computation integrates the
-    // requests hash in the payload builder. Using empty requests keeps the block hash consistent
-    // with the builder output while still exercising post-activation acceptance.
-    requests.push_request_with_type(1, []);
-
-    // Ensure the block hash inside the execution payload matches the sealed block we built.
-    let mut execution_payload = envelope.execution_payload;
-    execution_payload.payload_inner.payload_inner.block_hash = payload.block().hash();
-
+    // Load Network does not deploy the Prague execution-request system contracts, so
+    // execution always produces EMPTY_REQUESTS_HASH. The Engine API must therefore
+    // accept empty request lists after Prague activation.
+    let requests = Requests::default();
     let load_payload = LoadExecutionData::v4(
-        execution_payload,
+        envelope.execution_payload,
         versioned_hashes,
         parent_beacon_block_root,
         RequestsOrHash::Requests(requests),

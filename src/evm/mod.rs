@@ -19,6 +19,8 @@ use reth_node_api::FullNodeTypes;
 use reth_node_builder::{components::ExecutorBuilder, BuilderContext, PayloadBuilderConfig};
 use reth_primitives_traits::{BlockTy, HeaderTy, SealedBlock, SealedHeader};
 
+#[cfg(test)]
+use crate::chainspec::LOAD_EXECUTION_GAS_LIMIT;
 use crate::{
     chainspec::{
         LoadChainSpec, LOAD_BLOB_UPDATE_FRACTION, LOAD_MAX_BLOBS_PER_TX, LOAD_MAX_BLOB_COUNT,
@@ -238,7 +240,7 @@ mod tests {
         let spec = Arc::new(LoadChainSpec::default());
         let config = LoadEvmConfig::new(spec);
         let mut header = ConsensusHeader::default();
-        header.gas_limit = 30_000_000;
+        header.gas_limit = LOAD_EXECUTION_GAS_LIMIT;
         header.base_fee_per_gas = Some(1);
         header.timestamp = 1;
 

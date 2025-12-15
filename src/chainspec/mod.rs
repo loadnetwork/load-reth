@@ -28,6 +28,8 @@ pub const LOAD_TARGET_BLOB_COUNT: u64 = 512;
 pub const LOAD_MAX_BLOBS_PER_TX: u64 = 32;
 /// Pectra (EIP-7691) blob pricing update fraction (more responsive than Cancun).
 pub const LOAD_BLOB_UPDATE_FRACTION: u128 = 5_007_716;
+/// Default execution gas limit for Load blocks.
+pub const LOAD_EXECUTION_GAS_LIMIT: u64 = 2_000_000_000;
 
 /// Load chain specification wrapping reth's `ChainSpec`.
 #[derive(Debug, Clone, Into, Constructor, PartialEq, Eq)]

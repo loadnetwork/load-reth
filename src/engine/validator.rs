@@ -21,6 +21,8 @@ use reth_payload_primitives::{
 };
 use reth_primitives_traits::RecoveredBlock;
 
+#[cfg(test)]
+use crate::chainspec::LOAD_EXECUTION_GAS_LIMIT;
 use crate::{
     chainspec::LOAD_MAX_BLOB_COUNT,
     engine::payload::{LoadExecutionData, LoadPayloadAttributes},
@@ -194,7 +196,7 @@ mod tests {
             logs_bloom: Bloom::default(),
             prev_randao: Default::default(),
             block_number: 1,
-            gas_limit: 30_000_000,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
             gas_used: 0,
             timestamp: 1,
             extra_data: Bytes::default(),
@@ -240,7 +242,7 @@ mod tests {
             logs_bloom: Bloom::default(),
             prev_randao: alloy_primitives::B256::ZERO, // wrong
             block_number: 1,
-            gas_limit: 30_000_000,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
             gas_used: 0,
             timestamp: 1,
             extra_data: Bytes::default(),
@@ -284,7 +286,7 @@ mod tests {
             logs_bloom: Bloom::default(),
             prev_randao: alloy_primitives::B256::from(crate::LOAD_PREVRANDAO),
             block_number: 1,
-            gas_limit: 30_000_000,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
             gas_used: 0,
             timestamp: 1,
             extra_data: Bytes::default(),
@@ -330,7 +332,7 @@ mod tests {
             logs_bloom: Bloom::default(),
             prev_randao: alloy_primitives::B256::from(crate::LOAD_PREVRANDAO),
             block_number: 1,
-            gas_limit: 30_000_000,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
             gas_used: 0,
             timestamp: 1,
             extra_data: Bytes::default(),

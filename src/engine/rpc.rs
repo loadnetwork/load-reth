@@ -169,12 +169,18 @@ where
 {
     async fn new_payload_v1(&self, payload: ExecutionPayloadV1) -> RpcResult<PayloadStatus> {
         let payload = LoadExecutionData::from(payload);
-        Ok(self.inner.new_payload_v1_metered(payload).await?)
+        let start = Instant::now();
+        let result = self.inner.new_payload_v1_metered(payload).await?;
+        self.metrics.record_new_payload(start.elapsed());
+        Ok(result)
     }
 
     async fn new_payload_v2(&self, payload: ExecutionPayloadInputV2) -> RpcResult<PayloadStatus> {
         let payload = LoadExecutionData::from(payload);
-        Ok(self.inner.new_payload_v2_metered(payload).await?)
+        let start = Instant::now();
+        let result = self.inner.new_payload_v2_metered(payload).await?;
+        self.metrics.record_new_payload(start.elapsed());
+        Ok(result)
     }
 
     async fn new_payload_v3(
@@ -228,7 +234,13 @@ where
         fork_choice_state: ForkchoiceState,
         payload_attributes: Option<<EngineT as PayloadTypes>::PayloadAttributes>,
     ) -> RpcResult<ForkchoiceUpdated> {
-        Ok(self.inner.fork_choice_updated_v1_metered(fork_choice_state, payload_attributes).await?)
+        let start = Instant::now();
+        let result = self
+            .inner
+            .fork_choice_updated_v1_metered(fork_choice_state, payload_attributes)
+            .await?;
+        self.metrics.record_forkchoice(start.elapsed());
+        Ok(result)
     }
 
     async fn fork_choice_updated_v2(
@@ -236,7 +248,13 @@ where
         fork_choice_state: ForkchoiceState,
         payload_attributes: Option<<EngineT as PayloadTypes>::PayloadAttributes>,
     ) -> RpcResult<ForkchoiceUpdated> {
-        Ok(self.inner.fork_choice_updated_v2_metered(fork_choice_state, payload_attributes).await?)
+        let start = Instant::now();
+        let result = self
+            .inner
+            .fork_choice_updated_v2_metered(fork_choice_state, payload_attributes)
+            .await?;
+        self.metrics.record_forkchoice(start.elapsed());
+        Ok(result)
     }
 
     async fn fork_choice_updated_v3(
@@ -264,14 +282,20 @@ where
         &self,
         payload_id: PayloadId,
     ) -> RpcResult<EngineT::ExecutionPayloadEnvelopeV1> {
-        Ok(self.inner.get_payload_v1_metered(payload_id).await?)
+        let start = Instant::now();
+        let result = self.inner.get_payload_v1_metered(payload_id).await?;
+        self.metrics.record_get_payload(start.elapsed());
+        Ok(result)
     }
 
     async fn get_payload_v2(
         &self,
         payload_id: PayloadId,
     ) -> RpcResult<EngineT::ExecutionPayloadEnvelopeV2> {
-        Ok(self.inner.get_payload_v2_metered(payload_id).await?)
+        let start = Instant::now();
+        let result = self.inner.get_payload_v2_metered(payload_id).await?;
+        self.metrics.record_get_payload(start.elapsed());
+        Ok(result)
     }
 
     async fn get_payload_v3(
@@ -349,10 +373,10 @@ where
             return Err(err.into());
         }
 
-        let blobs = self
-            .pool
-            .get_blobs_for_versioned_hashes_v1(&versioned_hashes)
-            .map_err(|err| EngineApiError::Internal(Box::new(err)))?;
+        let blobs = match self.pool.get_blobs_for_versioned_hashes_v1(&versioned_hashes) {
+            Ok(blobs) => blobs,
+            Err(err) => return Err(EngineApiError::Internal(Box::new(err)).into()),
+        };
         let hits = blobs.iter().filter(|entry| entry.is_some()).count() as u64;
         let misses = blobs.len() as u64 - hits;
         self.metrics.record_get_blobs(hits, misses);
@@ -375,10 +399,10 @@ where
             return Err(err.into());
         }
 
-        let blobs = self
-            .pool
-            .get_blobs_for_versioned_hashes_v2(&versioned_hashes)
-            .map_err(|err| EngineApiError::Internal(Box::new(err)))?;
+        let blobs = match self.pool.get_blobs_for_versioned_hashes_v2(&versioned_hashes) {
+            Ok(blobs) => blobs,
+            Err(err) => return Err(EngineApiError::Internal(Box::new(err)).into()),
+        };
         if let Some(entries) = &blobs {
             let hits = entries.len() as u64;
             let misses = versioned_hashes.len() as u64 - hits;
