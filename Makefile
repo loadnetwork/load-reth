@@ -54,11 +54,13 @@ build-reproducible: ## Build load-reth reproducibly (x86_64-unknown-linux-gnu, r
 # Cross-compilation targets (requires `cross` tool: cargo install cross)
 .PHONY: build-x86_64-unknown-linux-gnu
 build-x86_64-unknown-linux-gnu: ## Cross-compile for x86_64 Linux
-	cross build --bin load-reth --target x86_64-unknown-linux-gnu --features "$(FEATURES)" --profile "$(PROFILE)" --locked
+	CROSS_CONTAINER_OPTS='-e LIBCLANG_PATH=/usr/lib/llvm-18/lib -e LLVM_CONFIG_PATH=/usr/lib/llvm-18/bin/llvm-config -e CLANG_PATH=/usr/lib/llvm-18/bin/clang -e LD_LIBRARY_PATH=/usr/lib/llvm-18/lib -e BINDGEN_EXTRA_CLANG_ARGS=--sysroot=/' \
+		cross build --bin load-reth --target x86_64-unknown-linux-gnu --features "$(FEATURES)" --profile "$(PROFILE)" --locked
 
 .PHONY: build-aarch64-unknown-linux-gnu
 build-aarch64-unknown-linux-gnu: ## Cross-compile for aarch64 Linux
-	JEMALLOC_SYS_WITH_LG_PAGE=16 cross build --bin load-reth --target aarch64-unknown-linux-gnu --features "$(FEATURES)" --profile "$(PROFILE)" --locked
+	CROSS_CONTAINER_OPTS='-e LIBCLANG_PATH=/usr/lib/llvm-18/lib -e LLVM_CONFIG_PATH=/usr/lib/llvm-18/bin/llvm-config -e CLANG_PATH=/usr/lib/llvm-18/bin/clang -e LD_LIBRARY_PATH=/usr/lib/llvm-18/lib -e BINDGEN_EXTRA_CLANG_ARGS=--sysroot=/usr/aarch64-linux-gnu' \
+		JEMALLOC_SYS_WITH_LG_PAGE=16 cross build --bin load-reth --target aarch64-unknown-linux-gnu --features "$(FEATURES)" --profile "$(PROFILE)" --locked
 
 ##@ Test
 
