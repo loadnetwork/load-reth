@@ -1,10 +1,4 @@
 [target.x86_64-unknown-linux-gnu]
-env = {
-    LIBCLANG_PATH = "/usr/lib/llvm-18/lib",
-    LLVM_CONFIG_PATH = "/usr/lib/llvm-18/bin/llvm-config",
-    CLANG_PATH = "/usr/lib/llvm-18/bin/clang",
-    BINDGEN_EXTRA_CLANG_ARGS = "--sysroot=/usr",
-}
 pre-build = [
     "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl lsb-release software-properties-common build-essential pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*",
     "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
@@ -16,12 +10,6 @@ pre-build = [
 ]
 
 [target.aarch64-unknown-linux-gnu]
-env = {
-    LIBCLANG_PATH = "/usr/lib/llvm-18/lib",
-    LLVM_CONFIG_PATH = "/usr/lib/llvm-18/bin/llvm-config",
-    CLANG_PATH = "/usr/lib/llvm-18/bin/clang",
-    BINDGEN_EXTRA_CLANG_ARGS = "--sysroot=/usr",
-}
 pre-build = [
     "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl lsb-release software-properties-common build-essential pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*",
     "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
