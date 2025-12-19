@@ -110,11 +110,14 @@ docker-build-debug: ## Fast debug build using Docker multistage (no cross-compil
 
 .PHONY: docker-build-push-latest
 docker-build-push-latest: ## Build cross-arch binaries and push multi-arch Docker image
-	$(MAKE) build-x86_64-unknown-linux-gnu
-	$(MAKE) build-aarch64-unknown-linux-gnu
+	rm -rf dist/
 	mkdir -p dist/bin/amd64 dist/bin/arm64
+	$(MAKE) build-x86_64-unknown-linux-gnu
 	cp target/x86_64-unknown-linux-gnu/$(PROFILE)/load-reth dist/bin/amd64/
+	rm -rf target/x86_64-unknown-linux-gnu
+	$(MAKE) build-aarch64-unknown-linux-gnu
 	cp target/aarch64-unknown-linux-gnu/$(PROFILE)/load-reth dist/bin/arm64/
+	rm -rf target/aarch64-unknown-linux-gnu
 	docker buildx build --file ./Dockerfile.cross . \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(DOCKER_IMAGE_NAME):$(GIT_TAG) \
