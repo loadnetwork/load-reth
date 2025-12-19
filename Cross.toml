@@ -4,6 +4,7 @@ pre-build = [
     "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
     "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang-18 libclang-18-dev llvm-18-dev && rm -rf /var/lib/apt/lists/*",
     "ln -sf /usr/lib/llvm-18/bin/llvm-config /usr/bin/llvm-config",
+    "if [ -d /usr/lib/llvm-3.8/bin ]; then ln -sf /usr/lib/llvm-18/bin/llvm-config /usr/lib/llvm-3.8/bin/llvm-config; fi",
     "ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.1 && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.3.8 && if [ -d /usr/lib/llvm-3.8/lib ]; then ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/llvm-3.8/lib/libclang.so; fi",
     "ldconfig"
 ]
@@ -14,6 +15,7 @@ pre-build = [
     "curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh && chmod +x /tmp/llvm.sh && /tmp/llvm.sh 18 && rm -f /tmp/llvm.sh",
     "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y clang-18 libclang-18-dev llvm-18-dev && rm -rf /var/lib/apt/lists/*",
     "ln -sf /usr/lib/llvm-18/bin/llvm-config /usr/bin/llvm-config",
+    "if [ -d /usr/lib/llvm-3.8/bin ]; then ln -sf /usr/lib/llvm-18/bin/llvm-config /usr/lib/llvm-3.8/bin/llvm-config; fi",
     "ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.1 && ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/libclang.so.3.8 && if [ -d /usr/lib/llvm-3.8/lib ]; then ln -sf /usr/lib/llvm-18/lib/libclang.so /usr/lib/llvm-3.8/lib/libclang.so; fi",
     "ldconfig"
 ]
