@@ -161,7 +161,7 @@ jobs:
         run: make docker-build-push-latest
         env:
           DOCKER_IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          GIT_TAG: ${{ steps.meta.outputs.git_tag }}
+          GIT_TAG: ${{ github.ref_name }}
 
       - name: Skip (no docker changes on main)
         if: ${{ !startsWith(github.ref, 'refs/tags/') && steps.changes.outputs.docker != 'true' }}
