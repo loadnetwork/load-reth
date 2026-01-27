@@ -10,13 +10,12 @@ use std::sync::Arc;
 
 use alloy_consensus::BlockHeader;
 use alloy_eips::eip7840::BlobParams;
-use alloy_primitives::Bytes;
 use reth::{api::NodeTypes, revm::context_interface::block::BlobExcessGasAndPrice};
 use reth_chainspec::{EthChainSpec, EthereumHardforks};
 use reth_evm::{ConfigureEngineEvm, ConfigureEvm, EvmEnvFor, ExecutionCtxFor};
 use reth_evm_ethereum::EthEvmConfig as UpstreamEvmConfig;
 use reth_node_api::FullNodeTypes;
-use reth_node_builder::{components::ExecutorBuilder, BuilderContext, PayloadBuilderConfig};
+use reth_node_builder::{components::ExecutorBuilder, BuilderContext};
 use reth_primitives_traits::{BlockTy, HeaderTy, SealedBlock, SealedHeader};
 
 #[cfg(test)]
@@ -50,12 +49,6 @@ impl LoadEvmConfig {
     /// Re-wraps an upstream config. Mostly useful for tests.
     pub fn from_inner(inner: UpstreamEvmConfig<LoadChainSpec>) -> Self {
         Self { inner }
-    }
-
-    /// Applies builder-configured extra data to the wrapped assembler.
-    pub fn with_extra_data(mut self, extra_data: Bytes) -> Self {
-        self.inner = self.inner.with_extra_data(extra_data);
-        self
     }
 
     fn load_blob_params_at(&self, timestamp: u64) -> BlobParams {
@@ -188,10 +181,9 @@ where
     type EVM = LoadEvmConfig;
 
     async fn build_evm(self, ctx: &BuilderContext<Node>) -> eyre::Result<Self::EVM> {
-        // Builder extra data (e.g. Load branding) needs to flow through the Load
-        // wrapper so we do not leak the upstream `EthEvmConfig` type anywhere.
-        Ok(LoadEvmConfig::new(ctx.chain_spec())
-            .with_extra_data(ctx.payload_builder_config().extra_data_bytes()))
+        // Builder extra data (e.g. Load branding) now flows through
+        // NextBlockEnvAttributes instead of EthEvmConfig.
+        Ok(LoadEvmConfig::new(ctx.chain_spec()))
     }
 }
 
@@ -212,15 +204,6 @@ mod tests {
     }
 
     #[test]
-    fn load_evm_config_with_extra_data() {
-        let spec = Arc::new(LoadChainSpec::default());
-        let extra_data = Bytes::from_static(b"Load Network");
-        let config = LoadEvmConfig::new(spec).with_extra_data(extra_data);
-        // Config should be created without panic
-        let _ = config.inner();
-    }
-
-    #[test]
     fn load_evm_config_from_inner() {
         let spec = Arc::new(LoadChainSpec::default());
         let inner = UpstreamEvmConfig::new(spec);
@@ -230,7 +213,7 @@ mod tests {
 
     #[test]
     fn load_executor_builder_is_default() {
-        let builder = LoadExecutorBuilder::default();
+        let builder = LoadExecutorBuilder;
         // Just verify it can be created
         let _ = builder;
     }
@@ -239,10 +222,12 @@ mod tests {
     fn evm_env_uses_load_blob_params() {
         let spec = Arc::new(LoadChainSpec::default());
         let config = LoadEvmConfig::new(spec);
-        let mut header = ConsensusHeader::default();
-        header.gas_limit = LOAD_EXECUTION_GAS_LIMIT;
-        header.base_fee_per_gas = Some(1);
-        header.timestamp = 1;
+        let header = ConsensusHeader {
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
+            base_fee_per_gas: Some(1),
+            timestamp: 1,
+            ..Default::default()
+        };
 
         let env = config.evm_env(&header).expect("env");
 

@@ -66,8 +66,10 @@ RUN TARGET=$(cat /tmp/target.txt) && \
 # Use Ubuntu 24.04 as the release image (modern, LTS, security updates)
 FROM ubuntu:24.04 AS runtime
 
-# Create non-root user for security
-RUN groupadd -r reth && useradd -r -g reth -d /home/reth -m reth
+# Create non-root user for security (fixed UID/GID for host volume ownership)
+ARG RETH_UID=10001
+ARG RETH_GID=10001
+RUN groupadd -r -g "${RETH_GID}" reth && useradd -r -u "${RETH_UID}" -g reth -d /home/reth -m reth
 
 # Install runtime dependencies
 RUN apt-get update && \

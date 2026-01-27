@@ -41,8 +41,10 @@ RUN cp /app/target/$BUILD_PROFILE/load-reth /app/load-reth
 # Use Ubuntu as the release image
 FROM ubuntu:24.04 AS runtime
 
-# Create non-root user
-RUN groupadd -r reth && useradd -r -g reth -d /home/reth -m reth
+# Create non-root user (fixed UID/GID for host volume ownership)
+ARG RETH_UID=10001
+ARG RETH_GID=10001
+RUN groupadd -r -g "${RETH_GID}" reth && useradd -r -u "${RETH_UID}" -g reth -d /home/reth -m reth
 
 # Install runtime dependencies
 RUN apt-get update && \

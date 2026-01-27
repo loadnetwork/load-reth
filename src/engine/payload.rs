@@ -8,7 +8,7 @@
 use std::{fmt, sync::Arc};
 
 use alloy_eips::{eip4895::Withdrawals, eip7685::RequestsOrHash};
-use alloy_primitives::B256;
+use alloy_primitives::{Bytes, B256};
 use alloy_rpc_types_engine::{
     BlobsBundleV1, CancunPayloadFields, ExecutionData, ExecutionPayload,
     ExecutionPayloadEnvelopeV2, ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4,
@@ -25,7 +25,7 @@ use reth_payload_primitives::{
     BuiltPayload, ExecutionPayload as ExecutionPayloadTrait, PayloadAttributesBuilder,
     PayloadBuilderAttributes,
 };
-use reth_primitives_traits::{NodePrimitives, SealedBlock};
+use reth_primitives_traits::{NodePrimitives, SealedBlock, SealedHeader};
 use thiserror::Error;
 
 use crate::{chainspec::LOAD_MAX_BLOB_COUNT, LOAD_PREVRANDAO};
@@ -182,7 +182,8 @@ impl Clone for LoadLocalPayloadAttributesBuilder {
 }
 
 impl PayloadAttributesBuilder<LoadPayloadAttributes> for LoadLocalPayloadAttributesBuilder {
-    fn build(&self, timestamp: u64) -> LoadPayloadAttributes {
+    fn build(&self, parent: &SealedHeader) -> LoadPayloadAttributes {
+        let timestamp = parent.timestamp + 1;
         LoadPayloadAttributes {
             inner: EthPayloadAttributes {
                 timestamp,
@@ -383,6 +384,14 @@ impl ExecutionPayloadTrait for LoadExecutionData {
 
     fn gas_used(&self) -> u64 {
         self.inner.payload.as_v1().gas_used
+    }
+
+    fn block_access_list(&self) -> Option<&Bytes> {
+        None
+    }
+
+    fn transaction_count(&self) -> usize {
+        self.inner.payload.as_v1().transactions.len()
     }
 }
 

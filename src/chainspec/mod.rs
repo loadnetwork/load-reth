@@ -292,7 +292,7 @@ impl ChainSpecParser for LoadChainSpecParser {
             path => {
                 info!(path, "Parsing Load chain spec from genesis file");
                 let genesis = reth_cli::chainspec::parse_genesis(path)
-                    .with_context(|| format!("Failed to parse genesis from {}", path))?;
+                    .map_err(|err| eyre::eyre!("Failed to parse genesis from {}: {}", path, err))?;
                 Ok(Arc::new(LoadChainSpec::from_genesis(genesis)?))
             }
         }

@@ -46,7 +46,7 @@ use crate::{
 };
 
 const LOAD_POOLED_TX_SOFT_LIMIT_BYTES: usize =
-    (crate::chainspec::LOAD_MAX_BLOBS_PER_TX as usize) * (BYTES_PER_BLOB as usize);
+    (crate::chainspec::LOAD_MAX_BLOBS_PER_TX as usize) * BYTES_PER_BLOB;
 
 /// Load Network node type configuration.
 ///
@@ -171,7 +171,7 @@ where
             .pool(LoadPoolBuilder)
             .executor(LoadExecutorBuilder)
             .payload(BasicPayloadServiceBuilder::new(LoadPayloadServiceBuilder::default()))
-            .network(LoadNetworkBuilder::default())
+            .network(LoadNetworkBuilder)
             .consensus(LoadConsensusBuilder)
     }
 

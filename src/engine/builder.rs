@@ -37,7 +37,7 @@ use reth_transaction_pool::{
 use tracing::{debug, trace, warn};
 
 use crate::{
-    chainspec::{LoadChainSpec, LOAD_MAX_BLOB_COUNT},
+    chainspec::{LoadChainSpec, LOAD_EXECUTION_GAS_LIMIT, LOAD_MAX_BLOB_COUNT},
     engine::payload::{LoadBuiltPayload, LoadPayloadBuilderAttributes},
     primitives::LoadPrimitives,
 };
@@ -79,8 +79,8 @@ where
         evm_config: Evm,
     ) -> eyre::Result<Self::PayloadBuilder> {
         let conf = ctx.payload_builder_config();
-        let chain = ctx.chain_spec().chain();
-        let gas_limit = conf.gas_limit_for(chain);
+        // Use Load's 2B gas limit instead of reth's 36M default for custom chains
+        let gas_limit = conf.gas_limit().unwrap_or(LOAD_EXECUTION_GAS_LIMIT);
 
         let builder_config = EthereumBuilderConfig::new().with_gas_limit(gas_limit);
 
@@ -198,6 +198,9 @@ where
     let mut db =
         State::builder().with_database(cached_reads.as_db_mut(state)).with_bundle_update().build();
 
+    let chain_spec = client.chain_spec();
+    let extra_data = chain_spec.inner.genesis.extra_data.clone();
+
     let mut builder = evm_config
         .builder_for_next_block(
             &mut db,
@@ -209,11 +212,10 @@ where
                 gas_limit: builder_config.gas_limit(parent_header.gas_limit),
                 parent_beacon_block_root: attributes.parent_beacon_block_root(),
                 withdrawals: Some(attributes.withdrawals().clone()),
+                extra_data,
             },
         )
         .map_err(PayloadBuilderError::other)?;
-
-    let chain_spec = client.chain_spec();
 
     debug!(
         target: "payload_builder",
@@ -250,7 +252,7 @@ where
         if cumulative_gas_used + pool_tx.gas_limit() > block_gas_limit {
             best_txs.mark_invalid(
                 &pool_tx,
-                InvalidPoolTransactionError::ExceedsGasLimit(pool_tx.gas_limit(), block_gas_limit),
+                &InvalidPoolTransactionError::ExceedsGasLimit(pool_tx.gas_limit(), block_gas_limit),
             );
             continue;
         }
@@ -269,7 +271,7 @@ where
         if is_osaka && estimated_block_size_with_tx > MAX_RLP_BLOCK_SIZE {
             best_txs.mark_invalid(
                 &pool_tx,
-                InvalidPoolTransactionError::OversizedData {
+                &InvalidPoolTransactionError::OversizedData {
                     size: estimated_block_size_with_tx,
                     limit: MAX_RLP_BLOCK_SIZE,
                 },
@@ -290,7 +292,7 @@ where
                 );
                 best_txs.mark_invalid(
                     &pool_tx,
-                    InvalidPoolTransactionError::Eip4844(
+                    &InvalidPoolTransactionError::Eip4844(
                         Eip4844PoolTransactionError::TooManyEip4844Blobs {
                             have: block_blob_count + tx_blob_count,
                             permitted: max_blob_count,
@@ -323,7 +325,7 @@ where
             blob_tx_sidecar = match blob_sidecar_result {
                 Ok(sidecar) => Some(sidecar),
                 Err(error) => {
-                    best_txs.mark_invalid(&pool_tx, InvalidPoolTransactionError::Eip4844(error));
+                    best_txs.mark_invalid(&pool_tx, &InvalidPoolTransactionError::Eip4844(error));
                     continue;
                 }
             };
@@ -340,7 +342,7 @@ where
                     trace!(target: "payload_builder", %error, ?tx, "skipping invalid transaction and its descendants");
                     best_txs.mark_invalid(
                         &pool_tx,
-                        InvalidPoolTransactionError::Consensus(
+                        &InvalidPoolTransactionError::Consensus(
                             InvalidTransactionError::TxTypeNotSupported,
                         ),
                     );

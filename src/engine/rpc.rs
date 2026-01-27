@@ -26,6 +26,7 @@ use reth::{
 };
 use reth_chainspec::EthereumHardforks;
 use reth_engine_primitives::{EngineApiValidator, EngineTypes};
+use reth_network::NetworkInfo;
 use reth_node_api::{AddOnsContext, FullNodeComponents};
 use reth_node_builder::rpc::PayloadValidatorBuilder;
 use reth_node_core::version::{version_metadata, CLIENT_CODE};
@@ -34,6 +35,7 @@ use reth_rpc_api::EngineApiServer;
 use reth_rpc_engine_api::{EngineApi, EngineApiError, EngineCapabilities};
 use reth_transaction_pool::TransactionPool;
 use tracing::trace;
+use std::fmt;
 
 use crate::{
     chainspec::{LoadChainSpec, LOAD_MAX_BLOB_COUNT},
@@ -105,21 +107,38 @@ where
             capabilities,
             engine_validator,
             ctx.config.engine.accept_execution_requests_hash,
+            ctx.node.network().clone(),
         );
 
         let engine_metrics = Arc::new(LoadEngineRpcMetrics::new());
+        let network = ctx.node.network().clone();
+        let is_syncing = Arc::new(move || network.is_syncing());
 
         // Wrap with Load-specific behaviour.
-        Ok(LoadEngineApi::new(inner, ctx.node.pool().clone(), engine_metrics))
+        Ok(LoadEngineApi::new(
+            inner,
+            ctx.node.pool().clone(),
+            engine_metrics,
+            is_syncing,
+        ))
     }
 }
 
 /// Load Engine API wrapper that overrides blob limits.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LoadEngineApi<Provider, PayloadT: PayloadTypes, Pool, Validator> {
     inner: EngineApi<Provider, PayloadT, Pool, Validator, LoadChainSpec>,
     pool: Pool,
     metrics: Arc<LoadEngineRpcMetrics>,
+    is_syncing: Arc<dyn Fn() -> bool + Send + Sync>,
+}
+
+impl<Provider, PayloadT: PayloadTypes, Pool, Validator> fmt::Debug
+    for LoadEngineApi<Provider, PayloadT, Pool, Validator>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LoadEngineApi").finish_non_exhaustive()
+    }
 }
 
 impl<Provider, PayloadT: PayloadTypes, Pool, Validator>
@@ -129,8 +148,9 @@ impl<Provider, PayloadT: PayloadTypes, Pool, Validator>
         inner: EngineApi<Provider, PayloadT, Pool, Validator, LoadChainSpec>,
         pool: Pool,
         metrics: Arc<LoadEngineRpcMetrics>,
+        is_syncing: Arc<dyn Fn() -> bool + Send + Sync>,
     ) -> Self {
-        Self { inner, pool, metrics }
+        Self { inner, pool, metrics, is_syncing }
     }
 }
 
@@ -411,6 +431,35 @@ where
             self.metrics.record_get_blobs(0, versioned_hashes.len() as u64);
         }
         Ok(blobs)
+    }
+
+    async fn get_blobs_v3(
+        &self,
+        versioned_hashes: Vec<B256>,
+    ) -> RpcResult<Option<Vec<Option<BlobAndProofV2>>>> {
+        trace!(target: "rpc::engine", "Serving engine_getBlobsV3 (Load)");
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+        if !self.inner.chain_spec().is_osaka_active_at_timestamp(now) {
+            return Err(EngineApiError::EngineObjectValidationError(
+                EngineObjectValidationError::UnsupportedFork,
+            )
+            .into());
+        }
+        if let Err(err) = validate_blob_request(&versioned_hashes) {
+            return Err(err.into());
+        }
+        if (self.is_syncing)() {
+            return Ok(None);
+        }
+
+        let blobs = match self.pool.get_blobs_for_versioned_hashes_v3(&versioned_hashes) {
+            Ok(blobs) => blobs,
+            Err(err) => return Err(EngineApiError::Internal(Box::new(err)).into()),
+        };
+        let hits = blobs.iter().filter(|entry| entry.is_some()).count() as u64;
+        let misses = blobs.len() as u64 - hits;
+        self.metrics.record_get_blobs(hits, misses);
+        Ok(Some(blobs))
     }
 }
 

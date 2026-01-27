@@ -19,7 +19,7 @@ use reth_payload_primitives::{
     EngineApiMessageVersion, EngineObjectValidationError, NewPayloadError, PayloadOrAttributes,
     PayloadTypes,
 };
-use reth_primitives_traits::RecoveredBlock;
+use reth_primitives_traits::SealedBlock;
 
 #[cfg(test)]
 use crate::chainspec::LOAD_EXECUTION_GAS_LIMIT;
@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<ChainSpec> LoadEngineValidator<ChainSpec> {
+impl<ChainSpec: EthereumHardforks> LoadEngineValidator<ChainSpec> {
     pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { inner: EthereumExecutionPayloadValidator::new(chain_spec) }
     }
@@ -63,6 +63,45 @@ impl<ChainSpec> LoadEngineValidator<ChainSpec> {
     #[inline]
     fn chain_spec(&self) -> &ChainSpec {
         self.inner.chain_spec()
+    }
+
+    fn ensure_load_payload_invariants(
+        &self,
+        payload: &LoadExecutionData,
+    ) -> Result<(), EngineObjectValidationError> {
+        let prague_active =
+            self.chain_spec().is_prague_active_at_timestamp(payload.payload().timestamp());
+
+        if payload.payload().prev_randao().as_slice() != LOAD_PREVRANDAO {
+            return Err(EngineObjectValidationError::InvalidParams(
+                eyre!("prev_randao must be constant 0x01 for Load").into(),
+            ));
+        }
+
+        if let Some(versioned_hashes) = payload.sidecar().versioned_hashes() {
+            if versioned_hashes.len() > LOAD_MAX_BLOB_COUNT as usize {
+                return Err(EngineObjectValidationError::InvalidParams(
+                    eyre!(
+                        "too many blob versioned hashes: {} (max {})",
+                        versioned_hashes.len(),
+                        LOAD_MAX_BLOB_COUNT
+                    )
+                    .into(),
+                ));
+            }
+        }
+
+        if !prague_active && payload.sidecar().requests().is_some() {
+            return Err(EngineObjectValidationError::InvalidParams(
+                eyre!(
+                    "Prague payload fields not active at timestamp {}",
+                    payload.payload().timestamp()
+                )
+                .into(),
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -73,12 +112,13 @@ where
 {
     type Block = Block;
 
-    fn ensure_well_formed_payload(
+    fn convert_payload_to_block(
         &self,
         payload: LoadExecutionData,
-    ) -> Result<RecoveredBlock<Self::Block>, NewPayloadError> {
-        let sealed_block = self.inner.ensure_well_formed_payload(payload.into())?;
-        sealed_block.try_recover().map_err(|e| NewPayloadError::Other(e.into()))
+    ) -> Result<SealedBlock<Self::Block>, NewPayloadError> {
+        self.ensure_load_payload_invariants(&payload)
+            .map_err(NewPayloadError::other)?;
+        self.inner.ensure_well_formed_payload(payload.into()).map_err(Into::into)
     }
 }
 
@@ -95,37 +135,8 @@ where
     ) -> Result<(), EngineObjectValidationError> {
         // Enforce blob limits on incoming payloads (Load allows up to 1024, not 128) and
         // prev_randao constant on payloads. Also gate Prague fields to the fork activation.
-        let prague_active =
-            self.chain_spec().is_prague_active_at_timestamp(payload_or_attrs.timestamp());
         if let PayloadOrAttributes::ExecutionPayload(payload) = &payload_or_attrs {
-            if payload.payload().prev_randao().as_slice() != LOAD_PREVRANDAO {
-                return Err(EngineObjectValidationError::InvalidParams(
-                    eyre!("prev_randao must be constant 0x01 for Load").into(),
-                ));
-            }
-
-            if let Some(versioned_hashes) = payload.sidecar().versioned_hashes() {
-                if versioned_hashes.len() > LOAD_MAX_BLOB_COUNT as usize {
-                    return Err(EngineObjectValidationError::InvalidParams(
-                        eyre!(
-                            "too many blob versioned hashes: {} (max {})",
-                            versioned_hashes.len(),
-                            LOAD_MAX_BLOB_COUNT
-                        )
-                        .into(),
-                    ));
-                }
-            }
-
-            if !prague_active && payload.sidecar().requests().is_some() {
-                return Err(EngineObjectValidationError::InvalidParams(
-                    eyre!(
-                        "Prague payload fields not active at timestamp {}",
-                        payload.payload().timestamp()
-                    )
-                    .into(),
-                ));
-            }
+            self.ensure_load_payload_invariants(payload)?;
         }
 
         // Enforce prev_randao invariant on attributes.
@@ -364,5 +375,85 @@ mod tests {
         );
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn convert_payload_rejects_wrong_prev_randao() {
+        let payload_v1 = ExecutionPayloadV1 {
+            parent_hash: Default::default(),
+            fee_recipient: Address::ZERO,
+            state_root: Default::default(),
+            receipts_root: Default::default(),
+            logs_bloom: Bloom::default(),
+            prev_randao: alloy_primitives::B256::ZERO,
+            block_number: 1,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
+            gas_used: 0,
+            timestamp: 1,
+            extra_data: Bytes::default(),
+            base_fee_per_gas: U256::ZERO,
+            block_hash: Default::default(),
+            transactions: Vec::new(),
+        };
+
+        let payload_v2 = ExecutionPayloadV2 { payload_inner: payload_v1, withdrawals: Vec::new() };
+        let payload_v3 =
+            ExecutionPayloadV3 { payload_inner: payload_v2, blob_gas_used: 0, excess_blob_gas: 0 };
+
+        let sidecar = ExecutionPayloadSidecar::v3(CancunPayloadFields {
+            parent_beacon_block_root: alloy_primitives::B256::ZERO,
+            versioned_hashes: Vec::new(),
+        });
+
+        let execution_data = LoadExecutionData::new(ExecutionPayload::V3(payload_v3), sidecar);
+        let validator = LoadEngineValidator::new(Arc::new(LoadChainSpec::default()));
+        let result = <LoadEngineValidator<LoadChainSpec> as PayloadValidator<
+            LoadEngineTypes,
+        >>::convert_payload_to_block(&validator, execution_data);
+
+        let err = result.expect_err("expected invalid prev_randao to be rejected");
+        assert!(err.to_string().contains("prev_randao"));
+    }
+
+    #[test]
+    fn convert_payload_rejects_too_many_blobs() {
+        let payload_v1 = ExecutionPayloadV1 {
+            parent_hash: Default::default(),
+            fee_recipient: Address::ZERO,
+            state_root: Default::default(),
+            receipts_root: Default::default(),
+            logs_bloom: Bloom::default(),
+            prev_randao: alloy_primitives::B256::from(crate::LOAD_PREVRANDAO),
+            block_number: 1,
+            gas_limit: LOAD_EXECUTION_GAS_LIMIT,
+            gas_used: 0,
+            timestamp: 1,
+            extra_data: Bytes::default(),
+            base_fee_per_gas: U256::ZERO,
+            block_hash: Default::default(),
+            transactions: Vec::new(),
+        };
+
+        let payload_v2 = ExecutionPayloadV2 { payload_inner: payload_v1, withdrawals: Vec::new() };
+        let payload_v3 =
+            ExecutionPayloadV3 { payload_inner: payload_v2, blob_gas_used: 0, excess_blob_gas: 0 };
+
+        let versioned_hashes = vec![
+            alloy_primitives::B256::ZERO;
+            (crate::chainspec::LOAD_MAX_BLOB_COUNT as usize) + 1
+        ];
+        let sidecar = ExecutionPayloadSidecar::v3(CancunPayloadFields {
+            parent_beacon_block_root: alloy_primitives::B256::ZERO,
+            versioned_hashes,
+        });
+
+        let execution_data = LoadExecutionData::new(ExecutionPayload::V3(payload_v3), sidecar);
+        let validator = LoadEngineValidator::new(Arc::new(LoadChainSpec::default()));
+        let result = <LoadEngineValidator<LoadChainSpec> as PayloadValidator<
+            LoadEngineTypes,
+        >>::convert_payload_to_block(&validator, execution_data);
+
+        let err = result.expect_err("expected too many blobs to be rejected");
+        assert!(err.to_string().contains("too many blob versioned hashes"));
     }
 }

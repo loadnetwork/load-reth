@@ -79,7 +79,7 @@ pub(crate) async fn blob_tx_with_nonce(
 
     let mut builder = SidecarBuilder::<SimpleCoder>::new();
     for idx in 0..blob_count {
-        let mut blob = vec![BLOB_FILL_BYTE; BYTES_PER_BLOB as usize];
+        let mut blob = vec![BLOB_FILL_BYTE; BYTES_PER_BLOB];
         blob[..8].copy_from_slice(&(idx as u64).to_le_bytes());
         builder.ingest(&blob);
     }

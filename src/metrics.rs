@@ -55,6 +55,12 @@ impl LoadEngineRpcMetrics {
     }
 }
 
+impl Default for LoadEngineRpcMetrics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Blob cache occupancy gauges.
 #[derive(Debug, Clone)]
 pub struct LoadBlobCacheMetrics {
@@ -75,5 +81,11 @@ impl LoadBlobCacheMetrics {
         if let Some(size) = bytes {
             self.bytes.set(size as f64);
         }
+    }
+}
+
+impl Default for LoadBlobCacheMetrics {
+    fn default() -> Self {
+        Self::new()
     }
 }

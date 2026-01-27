@@ -21,6 +21,7 @@ use reth::chainspec::{EthereumHardfork, ForkCondition};
 use reth_chainspec::EthChainSpec;
 use reth_e2e_test_utils::node::NodeTestContext;
 use reth_ethereum_engine_primitives::BlobSidecars;
+use reth_network::{NetworkSyncUpdater, SyncState};
 use reth_node_builder::NodeBuilder;
 use reth_node_core::{args::RpcServerArgs, node_config::NodeConfig};
 use reth_payload_primitives::BuiltPayload;
@@ -213,6 +214,112 @@ async fn engine_get_blobs_v2_rejected_before_osaka() -> eyre::Result<()> {
     } else {
         panic!("unexpected error variant: {err:?}");
     }
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn engine_get_blobs_v3_rejected_before_osaka() -> eyre::Result<()> {
+    let tasks = TaskManager::current();
+    let exec = tasks.executor();
+
+    let wallet = test_wallet();
+    let genesis = funded_genesis(&[wallet.address()]);
+    let mut spec = LoadChainSpec::from_genesis(genesis)?;
+    spec.inner.hardforks.insert(EthereumHardfork::Osaka, ForkCondition::Timestamp(u64::MAX));
+    let chain_spec = Arc::new(spec);
+
+    let node_config = NodeConfig::new(chain_spec.clone())
+        .with_unused_ports()
+        .with_rpc(RpcServerArgs::default().with_unused_ports().with_http());
+
+    let node_handle =
+        NodeBuilder::new(node_config).testing_node(exec).node(LoadNode::default()).launch().await?;
+
+    let node = NodeTestContext::new(node_handle.node, load_payload_attributes).await?;
+    let engine_client = node.inner.engine_http_client();
+
+    let res: Result<Option<Vec<Option<BlobAndProofV2>>>, _> =
+        ClientT::request(&engine_client, "engine_getBlobsV3", rpc_params![Vec::<B256>::new()])
+            .await;
+
+    let err = res.expect_err("engine_getBlobsV3 should be rejected before Osaka activation");
+    if let RpcError::Call(obj) = err {
+        // -38005: UnsupportedFork (per Engine API spec)
+        assert_eq!(obj.code(), -38005, "expected UnsupportedFork error code");
+    } else {
+        panic!("unexpected error variant: {err:?}");
+    }
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn engine_get_blobs_v3_rejects_requests_over_cap() -> eyre::Result<()> {
+    let tasks = TaskManager::current();
+    let exec = tasks.executor();
+
+    let wallet = test_wallet();
+    let genesis = funded_genesis(&[wallet.address()]);
+    let mut spec = LoadChainSpec::from_genesis(genesis)?;
+    spec.inner.hardforks.insert(EthereumHardfork::Osaka, ForkCondition::Timestamp(0));
+    let chain_spec = Arc::new(spec);
+
+    let node_config = NodeConfig::new(chain_spec.clone())
+        .with_unused_ports()
+        .with_rpc(RpcServerArgs::default().with_unused_ports().with_http());
+
+    let node_handle =
+        NodeBuilder::new(node_config).testing_node(exec).node(LoadNode::default()).launch().await?;
+
+    let node = NodeTestContext::new(node_handle.node, load_payload_attributes).await?;
+    let engine_client = node.inner.engine_http_client();
+
+    let oversized = vec![B256::ZERO; (LOAD_MAX_BLOB_COUNT + 1) as usize];
+    let res: Result<Option<Vec<Option<BlobAndProofV2>>>, _> =
+        ClientT::request(&engine_client, "engine_getBlobsV3", rpc_params![oversized]).await;
+
+    let err = res.expect_err("engine_getBlobsV3 should reject requests over the Load cap");
+    if let RpcError::Call(obj) = err {
+        // Reth returns -38004 "Too large request" for over-cap blob queries.
+        assert_eq!(obj.code(), -38004, "expected RequestTooLarge error code");
+    } else {
+        panic!("unexpected error variant: {err:?}");
+    }
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn engine_get_blobs_v3_returns_null_when_syncing() -> eyre::Result<()> {
+    let tasks = TaskManager::current();
+    let exec = tasks.executor();
+
+    let wallet = test_wallet();
+    let genesis = funded_genesis(&[wallet.address()]);
+    let mut spec = LoadChainSpec::from_genesis(genesis)?;
+    spec.inner.hardforks.insert(EthereumHardfork::Osaka, ForkCondition::Timestamp(0));
+    let chain_spec = Arc::new(spec);
+
+    let node_config = NodeConfig::new(chain_spec.clone())
+        .with_unused_ports()
+        .with_rpc(RpcServerArgs::default().with_unused_ports().with_http());
+
+    let node_handle =
+        NodeBuilder::new(node_config).testing_node(exec).node(LoadNode::default()).launch().await?;
+
+    let node = NodeTestContext::new(node_handle.node, load_payload_attributes).await?;
+    node.inner.network.update_sync_state(SyncState::Syncing);
+
+    let engine_client = node.inner.engine_http_client();
+    let res: Option<Vec<Option<BlobAndProofV2>>> = ClientT::request(
+        &engine_client,
+        "engine_getBlobsV3",
+        rpc_params![vec![B256::random()]],
+    )
+    .await?;
+
+    assert!(res.is_none(), "expected null response while syncing");
 
     Ok(())
 }

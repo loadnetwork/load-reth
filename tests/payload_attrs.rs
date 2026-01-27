@@ -152,7 +152,7 @@ async fn prague_requests_accepted_after_activation() -> Result<()> {
     let handle = node.inner.add_ons_handle.beacon_engine_handle.clone();
     let status = handle.new_payload(load_payload).await?;
     assert!(
-        matches!(status.status, PayloadStatusEnum::Valid { .. }),
+        matches!(status.status, PayloadStatusEnum::Valid),
         "engine_newPayload must accept Prague requests after activation (got {:?})",
         status.status
     );

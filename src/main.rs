@@ -10,6 +10,7 @@ use reth_cli_util::sigsegv_handler;
 use reth_ethereum_cli::Cli;
 use reth_ethereum_consensus::EthBeaconConsensus;
 use reth_node_builder::NodeHandle;
+use reth_node_core::args::DefaultEngineValues;
 use tracing::info;
 
 // Allocator configuration
@@ -23,6 +24,14 @@ fn main() {
     // Enable backtraces by default
     if std::env::var_os("RUST_BACKTRACE").is_none() {
         unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
+    }
+
+    // Load Network requires immediate block persistence for 1-slot finality.
+    // Default persistence_threshold=2 causes race condition where finalized
+    // blocks may still be in memory on restart, leading to CL/EL desync.
+    if let Err(err) = DefaultEngineValues::default().with_persistence_threshold(0).try_init() {
+        eprintln!("Failed to set engine persistence_threshold=0: {err:?}");
+        panic!("engine.persistence_threshold must be set to 0 for Load 1-slot finality");
     }
 
     // Components builder for CLI runner (EVM config + consensus)

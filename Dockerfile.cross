@@ -10,7 +10,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user just like the main image for consistency.
-RUN groupadd -r reth && useradd -r -g reth -d /home/reth -m reth
+ARG RETH_UID=10001
+ARG RETH_GID=10001
+RUN groupadd -r -g "${RETH_GID}" reth && useradd -r -u "${RETH_UID}" -g reth -d /home/reth -m reth
 
 ARG TARGETARCH
 COPY ./dist/bin/${TARGETARCH}/load-reth /usr/local/bin/load-reth

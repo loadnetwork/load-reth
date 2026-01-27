@@ -30,19 +30,19 @@ unused-must-use = "deny"
 rust-2018-idioms = "deny"
 
 [workspace.dependencies]
-# Alloy dependencies pinned to the upstream reth v1.9.3 release
-alloy-consensus = "1.0.37"
-alloy-eips = "1.0.37"
-alloy-genesis = "1.0.37"
-alloy-network = "1.0.37"
-alloy-primitives = "1.3.1"
+# Alloy dependencies pinned to reth v1.10.2 release
+alloy-consensus = "1.4.3"
+alloy-eips = "1.4.3"
+alloy-genesis = "1.4.3"
+alloy-network = "1.4.3"
+alloy-primitives = "1.5.0"
 alloy-rlp = "0.3.10"
-alloy-rpc-types = "1.0.37"
-alloy-rpc-types-engine = "1.0.37"
-alloy-rpc-types-eth = "1.0.37"
-alloy-serde = "1.0.37"
-alloy-signer = "1.1.2"
-alloy-signer-local = "1.1.2"
+alloy-rpc-types = "1.4.3"
+alloy-rpc-types-engine = "1.4.3"
+alloy-rpc-types-eth = "1.4.3"
+alloy-serde = "1.4.3"
+alloy-signer = "1.4.3"
+alloy-signer-local = "1.4.3"
 
 # Core utilities aligned with the upstream reth SDK
 async-trait = "0.1.88"
@@ -51,37 +51,42 @@ clap = { version = "4.5.40", features = ["derive"] }
 derive_more = "2.0.1"
 eyre = "0.6.12"
 
-# Reth SDK (v1.9.3)
-reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-basic-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-cli = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-cli-commands = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-cli-util = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-consensus-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-e2e-test-utils = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-engine-local = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-ethereum-cli = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-ethereum-engine-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-ethereum-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-metrics = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-network = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-network-peers = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-node-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-node-core = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-payload-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-tasks = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
+# Reth SDK (v1.10.2)
+reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-basic-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-cli = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-cli-commands = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-cli-util = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-consensus-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-e2e-test-utils = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-engine-local = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-engine-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-ethereum-cli = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-ethereum-engine-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-ethereum-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-metrics = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-network = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-network-peers = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-node-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-node-core = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-payload-builder = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-payload-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-rpc = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-rpc-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-rpc-engine-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-tasks = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
+reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2" }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = "1.0"
 thiserror = "2.0"
@@ -124,7 +129,7 @@ reth-cli-commands = { workspace = true }
 reth-cli-util = { workspace = true }
 reth-consensus-common = { workspace = true }
 reth-engine-local = { workspace = true }
-reth-engine-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
+reth-engine-primitives = { workspace = true }
 reth-ethereum-cli = { workspace = true }
 reth-ethereum-consensus = { workspace = true }
 reth-ethereum-engine-primitives = { workspace = true }
@@ -143,9 +148,9 @@ reth-payload-builder = { workspace = true }
 reth-payload-primitives = { workspace = true }
 reth-primitives-traits = { workspace = true }
 reth-provider = { workspace = true }
-reth-rpc = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-rpc-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-rpc-engine-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
+reth-rpc = { workspace = true }
+reth-rpc-api = { workspace = true }
+reth-rpc-engine-api = { workspace = true }
 reth-transaction-pool = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -159,10 +164,12 @@ alloy-rpc-types-eth = { workspace = true }
 alloy-signer = { workspace = true }
 alloy-signer-local = { workspace = true }
 hex = "0.4"
+reth-db = { workspace = true }
 reth-e2e-test-utils = { workspace = true }
 reth-tasks = { workspace = true }
 reth-tracing = { workspace = true }
 rstest = "0.23"
+tempfile = "3.10"
 tokio = { workspace = true }
 
 [lints]
