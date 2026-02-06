@@ -82,7 +82,9 @@ where
         // Use Load's 2B gas limit instead of reth's 36M default for custom chains
         let gas_limit = conf.gas_limit().unwrap_or(LOAD_EXECUTION_GAS_LIMIT);
 
-        let builder_config = EthereumBuilderConfig::new().with_gas_limit(gas_limit);
+        let builder_config = EthereumBuilderConfig::new()
+            .with_gas_limit(gas_limit)
+            .with_await_payload_on_missing(true);
 
         Ok(LoadPayloadBuilder::new(ctx.provider().clone(), pool, evm_config, builder_config))
     }
