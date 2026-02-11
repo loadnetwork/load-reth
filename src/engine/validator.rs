@@ -116,8 +116,7 @@ where
         &self,
         payload: LoadExecutionData,
     ) -> Result<SealedBlock<Self::Block>, NewPayloadError> {
-        self.ensure_load_payload_invariants(&payload)
-            .map_err(NewPayloadError::other)?;
+        self.ensure_load_payload_invariants(&payload).map_err(NewPayloadError::other)?;
         self.inner.ensure_well_formed_payload(payload.into()).map_err(Into::into)
     }
 }

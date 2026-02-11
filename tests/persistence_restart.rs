@@ -5,15 +5,17 @@
 
 mod common;
 
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use alloy_signer::Signer;
 use common::{funded_genesis, load_payload_attributes, test_wallet};
 use eyre::{bail, Result};
 use load_reth::{chainspec::LoadChainSpec, node::LoadNode};
-use reth_db::init_db;
 use reth_chainspec::EthChainSpec;
+use reth_db::init_db;
 use reth_e2e_test_utils::{node::NodeTestContext, transaction::TransactionTestContext};
 use reth_node_builder::NodeBuilder;
 use reth_node_core::{
@@ -153,10 +155,7 @@ async fn persistence_threshold_zero_survives_restart() -> Result<()> {
             break;
         }
         if Instant::now() > deadline {
-            bail!(
-                "restart should see persisted canonical block (last_block_number={})",
-                persisted
-            );
+            bail!("restart should see persisted canonical block (last_block_number={})", persisted);
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }

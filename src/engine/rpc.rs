@@ -6,6 +6,7 @@
 //! - keep a hook surface for future fork/attribute guards.
 
 use std::{
+    fmt,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
@@ -35,7 +36,6 @@ use reth_rpc_api::EngineApiServer;
 use reth_rpc_engine_api::{EngineApi, EngineApiError, EngineCapabilities};
 use reth_transaction_pool::TransactionPool;
 use tracing::trace;
-use std::fmt;
 
 use crate::{
     chainspec::{LoadChainSpec, LOAD_MAX_BLOB_COUNT},
@@ -115,12 +115,7 @@ where
         let is_syncing = Arc::new(move || network.is_syncing());
 
         // Wrap with Load-specific behaviour.
-        Ok(LoadEngineApi::new(
-            inner,
-            ctx.node.pool().clone(),
-            engine_metrics,
-            is_syncing,
-        ))
+        Ok(LoadEngineApi::new(inner, ctx.node.pool().clone(), engine_metrics, is_syncing))
     }
 }
 

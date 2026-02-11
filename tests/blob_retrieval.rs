@@ -312,12 +312,9 @@ async fn engine_get_blobs_v3_returns_null_when_syncing() -> eyre::Result<()> {
     node.inner.network.update_sync_state(SyncState::Syncing);
 
     let engine_client = node.inner.engine_http_client();
-    let res: Option<Vec<Option<BlobAndProofV2>>> = ClientT::request(
-        &engine_client,
-        "engine_getBlobsV3",
-        rpc_params![vec![B256::random()]],
-    )
-    .await?;
+    let res: Option<Vec<Option<BlobAndProofV2>>> =
+        ClientT::request(&engine_client, "engine_getBlobsV3", rpc_params![vec![B256::random()]])
+            .await?;
 
     assert!(res.is_none(), "expected null response while syncing");
 

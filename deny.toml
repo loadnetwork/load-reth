@@ -9,6 +9,18 @@ ignore = [
     # https://rustsec.org/advisories/RUSTSEC-2024-0436
     # paste crate unmaintained, comes from reth dependencies - no fix available yet
     "RUSTSEC-2024-0436",
+    # https://rustsec.org/advisories/RUSTSEC-2025-0137
+    # ruint unsoundness comes via upstream reth/alloy dependency graph; awaiting upstream bump
+    "RUSTSEC-2025-0137",
+    # https://rustsec.org/advisories/RUSTSEC-2025-0141
+    # bincode marked unmaintained; transitive via upstream reth stack, no direct safe replacement here yet
+    "RUSTSEC-2025-0141",
+    # https://rustsec.org/advisories/RUSTSEC-2026-0009
+    # time RFC2822 parser DoS; transitive in upstream deps; awaiting patched transitive upgrade
+    "RUSTSEC-2026-0009",
+    # https://rustsec.org/advisories/RUSTSEC-2026-0007
+    # bytes integer overflow; transitive via upstream reth networking deps, awaiting upstream bump
+    "RUSTSEC-2026-0007",
 ]
 
 [bans]

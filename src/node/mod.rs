@@ -22,7 +22,7 @@ use reth_node_api::{FullNodeComponents, PrimitivesTy};
 use reth_node_builder::{
     components::{BasicPayloadServiceBuilder, ComponentsBuilder, NetworkBuilder, NodeComponents},
     node::FullNodeTypes as FullNodeTypesAlias,
-    rpc::{BasicEngineValidatorBuilder, Identity as RpcIdentity, RpcAddOns},
+    rpc::{BasicEngineValidatorBuilder, RpcAddOns},
     BuilderContext, Node, NodeAdapter, NodeComponentsBuilder,
 };
 use reth_node_ethereum::node::EthereumEthApiBuilder;
@@ -42,6 +42,7 @@ use crate::{
     evm::{LoadEvmConfig, LoadExecutorBuilder},
     pool::LoadPoolBuilder,
     primitives::LoadPrimitives,
+    rpc::backpressure::LoadRpcBackpressureLayer,
     version::load_client_version_string,
 };
 
@@ -159,7 +160,7 @@ where
         LoadEngineValidatorBuilder,
         LoadEngineApiBuilder<LoadEngineValidatorBuilder>,
         BasicEngineValidatorBuilder<LoadEngineValidatorBuilder>,
-        RpcIdentity,
+        LoadRpcBackpressureLayer,
     >;
 
     fn components_builder(&self) -> Self::ComponentsBuilder {
@@ -184,7 +185,7 @@ where
             LoadEngineValidatorBuilder::default(),
             LoadEngineApiBuilder::<LoadEngineValidatorBuilder>::default(),
             BasicEngineValidatorBuilder::new(LoadEngineValidatorBuilder::default()),
-            RpcIdentity::default(),
+            LoadRpcBackpressureLayer::from_env(),
         )
     }
 }

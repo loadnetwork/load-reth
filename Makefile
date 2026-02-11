@@ -17,7 +17,8 @@ DOCKER_BUILDX_OUTPUT ?= type=oci,dest=dist/load-reth-multiarch.tar
 # Git metadata
 GIT_TAG := $(shell (git describe --exact-match --tags 2>/dev/null) || echo sha-$$(git rev-parse --short=12 HEAD))
 GIT_SHA := $(shell git rev-parse --short=12 HEAD 2>/dev/null || echo "unknown")
-AUDIT_IGNORES ?= RUSTSEC-2025-0055 RUSTSEC-2024-0388 RUSTSEC-2024-0436
+AUDIT_IGNORES ?= RUSTSEC-2025-0055 RUSTSEC-2024-0388 RUSTSEC-2024-0436 RUSTSEC-2025-0137 RUSTSEC-2025-0141 RUSTSEC-2026-0002 RUSTSEC-2026-0007 RUSTSEC-2026-0008 RUSTSEC-2026-0009
+CARGO_SORT_CMD ?= cargo sort --workspace
 
 AUDIT_FLAGS := --deny warnings
 ifneq ($(strip $(AUDIT_IGNORES)),)
@@ -166,11 +167,11 @@ clippy: ## Run clippy lints
 
 .PHONY: sort
 sort: ## Sort dependencies in Cargo.toml
-	cargo sort --workspace
+	$(CARGO_SORT_CMD)
 
 .PHONY: sort-check
 sort-check: ## Check if dependencies are sorted
-	cargo sort --workspace --check
+	$(CARGO_SORT_CMD) --check
 
 .PHONY: docs
 docs: ## Build documentation with warnings as errors

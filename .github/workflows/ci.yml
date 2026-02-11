@@ -10,6 +10,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_SORT_VERSION: "2.0.1"
+  CARGO_DENY_VERSION: "0.19.0"
+  CARGO_AUDIT_VERSION: "0.22.1"
 
 permissions:
   contents: read
@@ -62,10 +65,10 @@ jobs:
       - name: Install cargo-sort
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-sort
+          tool: cargo-sort@${{ env.CARGO_SORT_VERSION }}
 
       - name: sort-check
-        run: cargo sort --workspace --check
+        run: make sort-check
 
   # ----------------------------------------------------------------------------
   # Clippy
@@ -151,12 +154,12 @@ jobs:
       - name: Install cargo-deny
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-deny
+          tool: cargo-deny@${{ env.CARGO_DENY_VERSION }}
 
       - uses: Swatinem/rust-cache@v2
 
       - name: cargo deny
-        run: cargo deny check
+        run: make deny
 
   # ----------------------------------------------------------------------------
   # Security: cargo-audit
@@ -174,9 +177,9 @@ jobs:
       - name: Install cargo-audit
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-audit
+          tool: cargo-audit@${{ env.CARGO_AUDIT_VERSION }}
 
       - uses: Swatinem/rust-cache@v2
 
       - name: cargo audit
-        run: cargo audit --deny warnings --ignore RUSTSEC-2025-0055 --ignore RUSTSEC-2024-0388 --ignore RUSTSEC-2024-0436
+        run: make audit

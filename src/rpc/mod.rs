@@ -3,13 +3,16 @@
 //! We keep the wiring minimal: reuse the Ethereum eth API builder and swap in Load engine
 //! validator/API builders, mirroring the upstream `RpcAddOns` pattern.
 
+pub mod backpressure;
+
 use reth_node_api::FullNodeComponents;
 use reth_node_builder::rpc::{
     BasicEngineValidatorBuilder, EngineApiBuilder, EngineValidatorBuilder, EthApiBuilder,
-    Identity as RpcIdentity, PayloadValidatorBuilder, RethRpcAddOns, RethRpcMiddleware, RpcAddOns,
+    PayloadValidatorBuilder, RethRpcAddOns, RethRpcMiddleware, RpcAddOns,
 };
 use reth_node_ethereum::node::EthereumEthApiBuilder;
 
+use self::backpressure::LoadRpcBackpressureLayer;
 use crate::engine::{rpc::LoadEngineApiBuilder, validator::LoadEngineValidatorBuilder};
 
 /// Load RPC add-ons wrapper.
@@ -20,7 +23,7 @@ pub struct LoadAddOns<
     PVB = LoadEngineValidatorBuilder,
     EB = LoadEngineApiBuilder<PVB>,
     EVB = BasicEngineValidatorBuilder<PVB>,
-    RpcMiddleware = RpcIdentity,
+    RpcMiddleware = LoadRpcBackpressureLayer,
 > {
     inner: RpcAddOns<N, EthB, PVB, EB, EVB, RpcMiddleware>,
 }
@@ -37,7 +40,7 @@ where
                 LoadEngineValidatorBuilder::default(),
                 LoadEngineApiBuilder::<LoadEngineValidatorBuilder>::default(),
                 BasicEngineValidatorBuilder::new(LoadEngineValidatorBuilder::default()),
-                RpcIdentity::default(),
+                LoadRpcBackpressureLayer::from_env(),
             ),
         }
     }
